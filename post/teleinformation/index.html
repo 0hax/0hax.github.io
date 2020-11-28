@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+		<title>Relevé de consommation d&#39;éléctricité avec un Sonoff Basic &middot; LinuxMisc</title>
+		<link rel="canonical" href="0hax.github.io/post/teleinformation/">
+		<link rel="stylesheet" type="text/css" href="/css/main.css" />
+		
+	</head>
+	<body>
+		<a id="title" href="/" title="LinuxMisc">
+			
+			
+				<h1>LinuxMisc</h1>
+			
+		</a>
+		
+			<h4>Mostly stuffs related to Linux</h4>
+		
+		<div id="social">
+			
+			
+			<a href="mailto:0hax@protonmail.com" title="Email">
+				<img alt="Email" height="64px" width="64px" src="/images/email.svg" />
+			</a>
+			
+			
+			<a href="https://github.com/0hax" title="Github">
+				<img alt="GitHub" height="64px" width="64px" src="/images/github.svg" />
+			</a>
+			
+			
+			
+			<a href="https://twitter.com/0haxx" title="Twitter">
+				<img alt="Twitter" height="64px" width="64px" src="/images/twitter.svg" />
+			</a>
+			
+			
+                        
+		</div>
+		<div class="links">
+			<a href="/">Home</a>
+			
+				<a href="/post/">Archive</a>
+			
+			
+		</div>
+
+	<div class="postBody">
+		<div class="post">
+			<h1>Relevé de consommation d&#39;éléctricité avec un Sonoff Basic</h1>
+			<span class="post-meta">Sat, Nov 28, 2020 - Read in 5 Min</span>
+			<div class="content">
+			<nav id="TableOfContents"></nav>
+			<p>This first article will exceptionally be written in French as users of Linky electrical counter are mostly French :)<br>
+Let me know if you want the English version.</p>
+<p>Les compteurs Linky offre la possibilité de suivre sa consommation éléctrique directement via le site <a href="http://www.edf.fr">www.edf.fr</a>.<br>
+Cette option n&rsquo;est pas la meilleure pour tout le monde sachant qu&rsquo;avoir une consommation détaillée necessite de donner à EDF le droit d&rsquo;exploiter ses données de consommation à des fins commerciales. Aussi, les anciens compteurs n&rsquo;ont pas cette possibilité.</p>
+<p>Une solution alternative est d&rsquo;utiliser la téléinformation disponible sur tous les compteurs, Linky ou non, du moment que que les sorties I1 et I2 sont présentes sur les compteurs.<br>
+Cela permet de garder ses données chez soi et d&rsquo;avoir des mesures de consommation avec une meilleure granularité.<br>
+En effectuant une mesure toutes les minutes par exemple.</p>
+<p>Pour pouvoir faire ces mesures, nous allons utiliser un Sonoff Basic qui est un relais Wifi basé sur un ESP8265.</p>
+<p>Cette solution a plusieurs avantages:</p>
+<ul>
+<li>Le firmware du Sonoff Basic peut être facilement remplacé par un firmware que nous allons compiler</li>
+<li>Le circuit d&rsquo;alimentation via du 220v est déjà tout fait</li>
+<li>Les Pins VCC, RX et GND sont facilement accessible. Ce qui nous permettra de récupérer la téléinformation</li>
+</ul>
+<p>Pour le firmware nous allons utilisé ESPHome: <a href="https://github.com/esphome/esphome">https://github.com/esphome/esphome</a> qui permet de compiler son propre firmware via un fichier de configuration écrit en yaml.
+L&rsquo;avantage de cette solution est que nous pouvons ajouter dans le firmware que ce qui est nécessaire à la différence de Tasmota, ESPurna ou ESPeasy.</p>
+<p>Pour commencer, il faut démonter le Sonoff Basic et souder des fils sur les pins RX, TX, GND et VCC.
+Il existe pleins de tutoriels pour le faire donc je ne vais pas m&rsquo;y attarder.<br>
+Par exemple: <a href="https://github.com/xoseperez/espurna/wiki/Hardware-Itead-Sonoff-Basic">https://github.com/xoseperez/espurna/wiki/Hardware-Itead-Sonoff-Basic</a></p>
+<p>Une fois les fils soudés, vous pouvez vous munir d&rsquo;un convertisseur USB-UART 3v3 et vous pouvez flash esphome (<a href="https://esphome.io/index.html)">https://esphome.io/index.html)</a>.</p>
+<p>Les patches pour la téléinformation étant dans la branche de dévelopemment pour le moment, nous devons cloner le repository git.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git clone https://github.com/esphome/esphome.git
+git checkout 5a2b14cfa47a722053b36b5116ddc5d9d9d39597
+</code></pre></div><p>Le commit <code>5a2b14cfa47a722053b36b5116ddc5d9d9d39597</code> étant le commit apportant la téléinformation.</p>
+<p>Une fois fait, je recommande d&rsquo;utiliser un virtualenv pour installer esphome comme suit:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cd esphome
+virtualenv .
+source bin/activate
+</code></pre></div><p>Nous pouvons maintenant installer les dépendances et esphome dans le virtualenv:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">pip install -r requirements.txt 
+pip install .
+</code></pre></div><p>Puis créer notre projet <code>teleinfo.yaml</code>.
+Nous pouvons utiliser le wizard pour cela:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ esphome teleinfo.yaml wizard
+&lt;snip&gt;
+
+<span style="color:#f92672">(</span>name<span style="color:#f92672">)</span>: teleinfo
+Great! Your node is now called <span style="color:#e6db74">&#34;teleinfo&#34;</span>.
+
+&lt;snip&gt;
+
+Please enter either ESP32 or ESP8266.
+<span style="color:#f92672">(</span>ESP32/ESP8266<span style="color:#f92672">)</span>: ESP8266
+Thanks! You<span style="color:#e6db74">&#39;ve chosen ESP8266 as your platform.
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">Next, I need to know what board you&#39;</span>re using.
+Please go to http://docs.platformio.org/en/latest/platforms/espressif8266.html#boards and choose a board.
+
+For example <span style="color:#e6db74">&#34;nodemcuv2&#34;</span>.
+Options: d1, d1_mini, d1_mini_lite, d1_mini_pro, esp01, esp01_1m, esp07, esp12e, esp210, esp8285, esp_wroom_02, espduino, espectro, espino, espinotee, espresso_lite_v1, espresso_lite_v2, gen4iod, heltec_wifi_kit_8, huzzah, inventone, modwifi, nodemcu, nodemcuv2, oak, phoenix_v1, phoenix_v2, sparkfunBlynk, thing, thingdev, wifi_slot, wifiduino, wifinfo, wio_link, wio_node, xinabox_cw01
+<span style="color:#f92672">(</span>board<span style="color:#f92672">)</span>: esp8285
+Way to go! You<span style="color:#960050;background-color:#1e0010">&#39;</span>ve chosen esp8285 as your board.
+&lt;snip&gt;
+</code></pre></div><p>Voici le yaml généré:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">esphome</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">teleinfo</span>
+  <span style="color:#f92672">platform</span>: <span style="color:#ae81ff">ESP8266</span>
+  <span style="color:#f92672">board</span>: <span style="color:#ae81ff">esp8285</span>
+
+<span style="color:#f92672">wifi</span>:
+  <span style="color:#f92672">ssid</span>: <span style="color:#e6db74">&#34;myssid&#34;</span>
+  <span style="color:#f92672">password</span>: <span style="color:#e6db74">&#34;mypass&#34;</span>
+
+  <span style="color:#75715e"># Enable fallback hotspot (captive portal) in case wifi connection fails</span>
+  <span style="color:#f92672">ap</span>:
+    <span style="color:#f92672">ssid</span>: <span style="color:#e6db74">&#34;Teleinfo Fallback Hotspot&#34;</span>
+    <span style="color:#f92672">password</span>: <span style="color:#e6db74">&#34;v55JM6GajDlp&#34;</span>
+
+<span style="color:#f92672">captive_portal</span>:
+
+<span style="color:#75715e"># Enable logging</span>
+<span style="color:#f92672">logger</span>:
+
+<span style="color:#75715e"># Enable Home Assistant API</span>
+<span style="color:#f92672">api</span>:
+
+<span style="color:#f92672">ota</span>:
+</code></pre></div><p>Nous devons le modifier pour ajouter la téleinformation sur la broche RX (GPIO3) mais aussi désactiver le logger sur l&rsquo;UART car cela ne fonctionne pas en même temps que la téléinformation.
+De plus nous ne pouvons pas utiliser une autre broche que le RX relié au bloc hardware UART car l&rsquo;implémentation Software de l&rsquo;UART (sur une broche différente de GPIO3) n&rsquo;est pas assez efficace.</p>
+<p>Dans le yaml ci dessous, le Sonoff Basic va envoyer les données de téléinformation à un serveur MQTT et envoyer seulement les étiquettes <code>HCHP</code>, <code>HCHC</code> et <code>PAPP</code> qui correspondent respectivement aux consommations en heures pleines, en heures creuses et à la puissance apparente.
+Le logger est désactivé et les logs sont envoyés à un serveur mqtt:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">esphome</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">teleinfo</span>
+  <span style="color:#f92672">platform</span>: <span style="color:#ae81ff">ESP8266</span>
+  <span style="color:#f92672">board</span>: <span style="color:#ae81ff">esp8285</span>
+
+<span style="color:#f92672">wifi</span>:
+  <span style="color:#f92672">ssid</span>: <span style="color:#e6db74">&#34;myssid&#34;</span>
+  <span style="color:#f92672">password</span>: <span style="color:#e6db74">&#34;mypass&#34;</span>
+
+  <span style="color:#75715e"># Enable fallback hotspot (captive portal) in case wifi connection fails</span>
+  <span style="color:#f92672">ap</span>:
+    <span style="color:#f92672">ssid</span>: <span style="color:#e6db74">&#34;Teleinfo Fallback Hotspot&#34;</span>
+    <span style="color:#f92672">password</span>: <span style="color:#e6db74">&#34;v55JM6GajDlp&#34;</span>
+
+<span style="color:#f92672">captive_portal</span>:
+
+<span style="color:#75715e"># Disable logger over UART</span>
+<span style="color:#f92672">logger</span>:
+  <span style="color:#f92672">baud_rate</span>: <span style="color:#ae81ff">0</span>
+
+<span style="color:#75715e"># Enable Home Assistant API</span>
+<span style="color:#f92672">api</span>:
+
+<span style="color:#f92672">ota</span>:
+
+<span style="color:#f92672">mqtt</span>:
+  <span style="color:#f92672">broker</span>: <span style="color:#ae81ff">name_of_your_broker</span>
+  <span style="color:#f92672">log_topic</span>: <span style="color:#ae81ff">log</span>
+
+<span style="color:#f92672">uart</span>:
+  <span style="color:#f92672">id</span>: <span style="color:#ae81ff">uart_bus</span>
+  <span style="color:#f92672">rx_pin</span>: <span style="color:#ae81ff">GPIO3</span>
+  <span style="color:#f92672">tx_pin</span>: <span style="color:#ae81ff">GPIO1</span>
+  <span style="color:#f92672">baud_rate</span>: <span style="color:#ae81ff">1200</span>
+  <span style="color:#f92672">parity</span>: <span style="color:#ae81ff">EVEN</span>
+  <span style="color:#f92672">data_bits</span>: <span style="color:#ae81ff">7</span>
+
+<span style="color:#f92672">sensor</span>:
+  - <span style="color:#f92672">platform</span>: <span style="color:#ae81ff">teleinfo</span>
+    <span style="color:#f92672">tags</span>:
+     - <span style="color:#f92672">tag_name</span>: <span style="color:#e6db74">&#34;HCHC&#34;</span>
+       <span style="color:#f92672">sensor</span>:
+        <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;hchc&#34;</span>
+        <span style="color:#f92672">unit_of_measurement</span>: <span style="color:#e6db74">&#34;Wh&#34;</span>
+        <span style="color:#f92672">icon</span>: <span style="color:#ae81ff">mdi:flash</span>
+     - <span style="color:#f92672">tag_name</span>: <span style="color:#e6db74">&#34;HCHP&#34;</span>
+       <span style="color:#f92672">sensor</span>:
+        <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;hchp&#34;</span>
+        <span style="color:#f92672">unit_of_measurement</span>: <span style="color:#e6db74">&#34;Wh&#34;</span>
+        <span style="color:#f92672">icon</span>: <span style="color:#ae81ff">mdi:flash</span>
+     - <span style="color:#f92672">tag_name</span>: <span style="color:#e6db74">&#34;PAPP&#34;</span>
+       <span style="color:#f92672">sensor</span>:
+        <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;papp&#34;</span>
+        <span style="color:#f92672">unit_of_measurement</span>: <span style="color:#e6db74">&#34;VA&#34;</span>
+        <span style="color:#f92672">icon</span>: <span style="color:#ae81ff">mdi:flash</span>
+    <span style="color:#f92672">update_interval</span>: <span style="color:#ae81ff">60s</span>
+    <span style="color:#f92672">historical_mode</span>: <span style="color:#66d9ef">true</span>
+</code></pre></div><p>Pour un détail de toutes les étiquettes possibles, je vous conseil de regarder la documentation de la téléinformation:
+<a href="https://www.enedis.fr/sites/default/files/Enedis-NOI-CPT_54E.pdf">https://www.enedis.fr/sites/default/files/Enedis-NOI-CPT_54E.pdf</a></p>
+<p>Il y aussi l&rsquo;option <code>historical_mode</code> qui permet de préciser si le compteur EDF est en mode historique ou standard. Vous pouvez trouver la configuration de votre Linky directement via le menu sur le linky.</p>
+<p>Maintenant que le yaml est prêt, il suffit de le flasher après avoir relié votre convertisseur UART vers USB entre le Sonoff et votre ordinateur.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">esphome teleinfo.yaml run
+</code></pre></div><p>Votre Sonoff maintenant flashé, il faut créer un petit circuit permettant de démoduler le signal de téléinformation et le relié à la pin RX du Sonoff.
+Pour cela, nous allons utiliser un optocoupleur SFH620A et une résistance de 1k que nous allons soudé sur une plaque.
+Il y a plusieurs montage possible mais c&rsquo;est le montage que j&rsquo;utilise depuis quelques mois et je n&rsquo;ai eu aucun problèmes de stabilité.<br>
+Voici un schéma du montage:<br>
+<img src="/schema.jpg" alt="alt text"></p>
+<p>Voici une photo du circuit avec le sfh620a relié au linky et au sonoff:</p>
+<p><img src="/sfh620a_linky_little.jpg" alt="alt text"></p>
+<p>Et les fils qui partent du Sonoff via un trou au niveau du capot:<br>
+<img src="/sonoff_sfh_little.jpg" alt="alt text"></p>
+<p>Une fois que tout est relié et connecté au compteur, votre Sonoff devraient envoyer les informations au server MQTT.<br>
+J&rsquo;utilise une raspberry avec mosquitto comme serveur MQTT.
+Pour voir les données reçu, nous pouvons utiliser:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ mosquitto_sub -v -h localhost -t <span style="color:#e6db74">&#39;#&#39;</span>
+log <span style="color:#f92672">[</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;hchc&#39;</span>: Sending state 7309004.00000 Wh with <span style="color:#ae81ff">0</span> decimals of accuracy
+teleinfo/sensor/hchc/state <span style="color:#ae81ff">7309004</span>
+log <span style="color:#f92672">[</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;hchp&#39;</span>: Sending state 10155192.00000 Wh with <span style="color:#ae81ff">0</span> decimals of accuracy
+teleinfo/sensor/hchp/state <span style="color:#ae81ff">10155192</span>
+log <span style="color:#f92672">[</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;papp&#39;</span>: Sending state 450.00000 VA with <span style="color:#ae81ff">0</span> decimals of accuracy
+teleinfo/sensor/papp/state <span style="color:#ae81ff">450</span>
+</code></pre></div><p>Dans un prochain post, nous allons voir comment traiter les données dans homeassistant et génerer des graphiques de consommation.</p>
+
+			</div>
+		</div>
+	</div>
+		<div class="links">
+			<a href="/">Home</a>
+			
+				<a href="/post/">Archive</a>
+			
+			
+			<a href="#top">Top</a>
+		</div>
+		
+		
+	</body>
+</html>
+
