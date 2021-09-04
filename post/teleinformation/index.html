@@ -73,11 +73,9 @@ L&rsquo;avantage de cette solution est que nous pouvons ajouter dans le firmware
 Il existe pleins de tutoriels pour le faire donc je ne vais pas m&rsquo;y attarder.<br>
 Par exemple: <a href="https://github.com/xoseperez/espurna/wiki/Hardware-Itead-Sonoff-Basic">https://github.com/xoseperez/espurna/wiki/Hardware-Itead-Sonoff-Basic</a></p>
 <p>Une fois les fils soudés, vous pouvez vous munir d&rsquo;un convertisseur USB-UART 3v3 et vous pouvez flash esphome (<a href="https://esphome.io/index.html)">https://esphome.io/index.html)</a>.</p>
-<p>Les patches pour la téléinformation étant dans la branche de dévelopemment pour le moment, nous devons cloner le repository git.</p>
+<p>Nous devons cloner le repository git.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git clone https://github.com/esphome/esphome.git
-git checkout 5a2b14cfa47a722053b36b5116ddc5d9d9d39597
-</code></pre></div><p>Le commit <code>5a2b14cfa47a722053b36b5116ddc5d9d9d39597</code> étant le commit apportant la téléinformation.</p>
-<p>Une fois fait, je recommande d&rsquo;utiliser un virtualenv pour installer esphome comme suit:</p>
+</code></pre></div><p>Une fois fait, je recommande d&rsquo;utiliser un virtualenv pour installer esphome comme suit:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cd esphome
 virtualenv .
 source bin/activate
@@ -171,26 +169,30 @@ Le logger est désactivé et les logs sont envoyés à un serveur mqtt:</p>
   <span style="color:#f92672">parity</span>: <span style="color:#ae81ff">EVEN</span>
   <span style="color:#f92672">data_bits</span>: <span style="color:#ae81ff">7</span>
 
+<span style="color:#f92672">teleinfo</span>:
+  <span style="color:#f92672">id</span>: <span style="color:#ae81ff">myteleinfo</span>
+  <span style="color:#f92672">update_interval</span>: <span style="color:#ae81ff">60s</span>
+  <span style="color:#f92672">historical_mode</span>: <span style="color:#66d9ef">true</span>
+
 <span style="color:#f92672">sensor</span>:
   - <span style="color:#f92672">platform</span>: <span style="color:#ae81ff">teleinfo</span>
-    <span style="color:#f92672">tags</span>:
-     - <span style="color:#f92672">tag_name</span>: <span style="color:#e6db74">&#34;HCHC&#34;</span>
-       <span style="color:#f92672">sensor</span>:
-        <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;hchc&#34;</span>
-        <span style="color:#f92672">unit_of_measurement</span>: <span style="color:#e6db74">&#34;Wh&#34;</span>
-        <span style="color:#f92672">icon</span>: <span style="color:#ae81ff">mdi:flash</span>
-     - <span style="color:#f92672">tag_name</span>: <span style="color:#e6db74">&#34;HCHP&#34;</span>
-       <span style="color:#f92672">sensor</span>:
-        <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;hchp&#34;</span>
-        <span style="color:#f92672">unit_of_measurement</span>: <span style="color:#e6db74">&#34;Wh&#34;</span>
-        <span style="color:#f92672">icon</span>: <span style="color:#ae81ff">mdi:flash</span>
-     - <span style="color:#f92672">tag_name</span>: <span style="color:#e6db74">&#34;PAPP&#34;</span>
-       <span style="color:#f92672">sensor</span>:
-        <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;papp&#34;</span>
-        <span style="color:#f92672">unit_of_measurement</span>: <span style="color:#e6db74">&#34;VA&#34;</span>
-        <span style="color:#f92672">icon</span>: <span style="color:#ae81ff">mdi:flash</span>
-    <span style="color:#f92672">update_interval</span>: <span style="color:#ae81ff">60s</span>
-    <span style="color:#f92672">historical_mode</span>: <span style="color:#66d9ef">true</span>
+    <span style="color:#f92672">tag_name</span>: <span style="color:#e6db74">&#34;HCHC&#34;</span>
+    <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;hchc&#34;</span>
+    <span style="color:#f92672">unit_of_measurement</span>: <span style="color:#e6db74">&#34;Wh&#34;</span>
+    <span style="color:#f92672">icon</span>: <span style="color:#ae81ff">mdi:flash</span>
+    <span style="color:#f92672">teleinfo_id</span>: <span style="color:#ae81ff">myteleinfo</span>
+  - <span style="color:#f92672">platform</span>: <span style="color:#ae81ff">teleinfo</span>
+    <span style="color:#f92672">tag_name</span>: <span style="color:#e6db74">&#34;HCHP&#34;</span>
+    <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;hchp&#34;</span>
+    <span style="color:#f92672">unit_of_measurement</span>: <span style="color:#e6db74">&#34;Wh&#34;</span>
+    <span style="color:#f92672">icon</span>: <span style="color:#ae81ff">mdi:flash</span>
+    <span style="color:#f92672">teleinfo_id</span>: <span style="color:#ae81ff">myteleinfo</span>
+  - <span style="color:#f92672">platform</span>: <span style="color:#ae81ff">teleinfo</span>
+    <span style="color:#f92672">tag_name</span>: <span style="color:#e6db74">&#34;PAPP&#34;</span>
+    <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;papp&#34;</span>
+    <span style="color:#f92672">unit_of_measurement</span>: <span style="color:#e6db74">&#34;VA&#34;</span>
+    <span style="color:#f92672">icon</span>: <span style="color:#ae81ff">mdi:flash</span>
+    <span style="color:#f92672">teleinfo_id</span>: <span style="color:#ae81ff">myteleinfo</span>
 </code></pre></div><p>Pour un détail de toutes les étiquettes possibles, je vous conseil de regarder la documentation de la téléinformation:
 <a href="https://www.enedis.fr/sites/default/files/Enedis-NOI-CPT_54E.pdf">https://www.enedis.fr/sites/default/files/Enedis-NOI-CPT_54E.pdf</a></p>
 <p>Il y aussi l&rsquo;option <code>historical_mode</code> qui permet de préciser si le compteur EDF est en mode historique ou standard. Vous pouvez trouver la configuration de votre Linky directement via le menu sur le linky.</p>
@@ -198,7 +200,7 @@ Le logger est désactivé et les logs sont envoyés à un serveur mqtt:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">esphome teleinfo.yaml run
 </code></pre></div><p>Votre Sonoff maintenant flashé, il faut créer un petit circuit permettant de démoduler le signal de téléinformation et le relié à la pin RX du Sonoff.
 Pour cela, nous allons utiliser un optocoupleur SFH620A et une résistance de 1k que nous allons soudé sur une plaque.
-Il y a plusieurs montage possible mais c&rsquo;est le montage que j&rsquo;utilise depuis quelques mois et je n&rsquo;ai eu aucun problèmes de stabilité.<br>
+Il y a plusieurs montage possible mais c&rsquo;est le montage que j&rsquo;utilise depuis quelques années et je n&rsquo;ai eu aucun problèmes de stabilité.<br>
 Voici un schéma du montage:<br>
 <img src="/schema.jpg" alt="alt text"></p>
 <p>Voici une photo du circuit avec le sfh620a relié au linky et au sonoff:</p>
